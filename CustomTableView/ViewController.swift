@@ -1,4 +1,5 @@
 import UIKit
+import Combine
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
@@ -11,6 +12,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         ContactModel(icon: "laptop-user.png", firstName: "Tim", lastName: "Carter", phoneNumber: "484-732-3912"),
         ContactModel(icon: "laptop-user.png", firstName: "Jim", lastName: "Golden", phoneNumber: "215-830-9848")
     ]
+    
+    var observer: AnyCancellable?
+    var observers: [AnyCancellable] = []
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,16 +30,26 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if let cell = tableView.dequeueReusableCell(withIdentifier: "contactCell", for: indexPath) as? ContactCell {
-            let extractedContact = contacts[indexPath.row]
-            
-            //call the update view function from ContactCell
-            cell.UpdateCellView(contact: extractedContact)
-            return cell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "contactCell", for: indexPath) as? ContactCell else {
+            fatalError("Could not dequeue ContactCell")
         }
-        else {
-            return ContactCell()
-        }
+        let contact = contacts[indexPath.row]
+        cell.updateCellView(contact: contact)
+        subscribeToCellActions(cell, at: indexPath)
+        return cell
+    }
+    
+    private func subscribeToCellActions(_ cell: ContactCell, at indexPath: IndexPath) {
+        
+        cell.action.sink { [weak self] currentContact in
+            print("Calling to: \(currentContact.firstName)")
+        }.store(in: &observers)
+        
+        /*
+         //Usar esto por ejemplo si se usa un xib y no varios elementos como una celda
+        observer = cell.action.sink { [weak self] currentContact in
+            print("Calling to: \(currentContact.firstName)")
+        }*/
     }
 }
 
